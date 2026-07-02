@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HomeOS — one brain for the whole home</title>
+<meta name="description" content="Open-source smart home platform: AI agent, live dashboard, and automation over an MQTT digital-twin pipeline.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0f12; --raised:#14171c; --raised-2:#1a1e24;
+    --ink:#e8eaed; --muted:#8b929c; --dim:#5c636d;
+    --accent:#f0a63c; --accent-dim:rgba(240,166,60,.14);
+    --line:rgba(255,255,255,.07); --line-strong:rgba(255,255,255,.12);
+    --display:"Space Grotesk",sans-serif; --text:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",monospace;
+    --s1:8px; --s2:16px; --s3:24px; --s4:40px; --s5:64px; --s6:96px; --s7:140px;
+    --r:12px; --maxw:1120px;
+  }
+  *{box-sizing:border-box;margin:0} html{scroll-behavior:smooth}
+  body{font-family:var(--text);color:var(--ink);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--s3)}
+  a{color:inherit;text-decoration:none}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  h1{font-family:var(--display);font-size:clamp(44px,7.5vw,92px);line-height:1.02;letter-spacing:-.03em;font-weight:600}
+  h2{font-family:var(--display);font-size:clamp(28px,4vw,44px);line-height:1.1;letter-spacing:-.02em;font-weight:600}
+  .lead{font-size:clamp(16px,1.6vw,19px);color:var(--muted);max-width:56ch}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:14px 26px;background:var(--accent);color:#131007;border-radius:10px;font-weight:500;font-size:15px;transition:transform .2s cubic-bezier(.22,1,.36,1),filter .2s}
+  .btn:hover{transform:translateY(-1px);filter:brightness(1.06)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line-strong)}
+  .btn.ghost:hover{border-color:var(--muted)}
+  code,.mono{font-family:var(--mono)}
+  .chip{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:var(--raised);border:1px solid var(--line);border-radius:6px;padding:3px 9px;white-space:nowrap}
+  .chip b{color:var(--accent);font-weight:500}
+  section{padding:var(--s7) 0}
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s cubic-bezier(.22,1,.36,1),transform .6s cubic-bezier(.22,1,.36,1)}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+  nav{border-bottom:1px solid var(--line)}
+  .navbar{display:flex;align-items:center;justify-content:space-between;height:76px}
+  .wordmark{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em}
+  .wordmark span{color:var(--accent)}
+  .navlinks{display:flex;align-items:center;gap:var(--s4);font-size:14px;color:var(--muted)}
+  .navlinks a:hover{color:var(--ink)}
+  .navlinks .btn{padding:9px 18px;font-size:14px}
+
+  .hero{position:relative;overflow:hidden;padding:var(--s7) 0 var(--s6)}
+  .hero-glow{position:absolute;top:-220px;left:50%;transform:translateX(-50%);width:900px;height:600px;background:radial-gradient(ellipse at center,rgba(240,166,60,.09),transparent 62%);pointer-events:none}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:var(--s5);align-items:center}
+  .hero .lead{margin:var(--s3) 0 var(--s4)}
+  .hero-ctas{display:flex;gap:var(--s2);flex-wrap:wrap;align-items:center}
+  .hero-meta{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s4)}
+
+  .frame{background:var(--raised);border:1px solid var(--line-strong);border-radius:14px;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 24px 60px rgba(0,0,0,.45)}
+  .frame-bar{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line)}
+  .frame-bar i{width:10px;height:10px;border-radius:50%;background:var(--raised-2);display:block}
+  .frame-url{font-family:var(--mono);font-size:11px;color:var(--dim);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 12px;margin-left:6px}
+  .app{padding:16px;background:var(--bg)}
+  .app-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .app-brand{font-family:var(--display);font-size:13px;font-weight:600}
+  .live{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:3px 10px}
+  .live i{width:6px;height:6px;border-radius:50%;background:#4cc38a;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+  .kpi{background:var(--raised);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .kpi label{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);display:block}
+  .kpi b{font-family:var(--display);font-size:16px;font-weight:600}
+  .kpi span{font-size:10px;color:var(--muted)}
+  .app-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:8px}
+  .pane{background:var(--raised);border:1px solid var(--line);border-radius:8px;padding:10px}
+  .pane h4{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-weight:400;margin-bottom:8px}
+  .room{fill:var(--raised-2);stroke:var(--line-strong)}
+  .room.sel{fill:rgba(240,166,60,.10);stroke:var(--accent)}
+  .rn{font-size:8px;fill:var(--muted);font-family:var(--text)}
+  .rt{font-size:12px;fill:var(--ink);font-family:var(--display);font-weight:600}
+  .ctl{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);padding:7px 0;border-bottom:1px solid var(--line)}
+  .ctl:last-child{border-bottom:0}
+  .ctl b{color:var(--ink);font-weight:500;font-size:11.5px}
+  .track{position:relative;width:74px;height:3px;background:var(--raised-2);border-radius:2px}
+  .track i{position:absolute;left:0;top:0;height:3px;width:58%;background:var(--accent);border-radius:2px;display:block}
+  .track em{position:absolute;left:58%;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--ink);display:block;transform:translateX(-50%)}
+  .toggle{width:30px;height:17px;border-radius:10px;background:var(--accent);position:relative}
+  .toggle i{position:absolute;right:2px;top:2px;width:13px;height:13px;border-radius:50%;background:#131007;display:block}
+  .sparkline{margin-top:8px}
+
+  .planes{display:flex;flex-direction:column}
+  .plane{display:grid;grid-template-columns:64px 1fr 1fr;gap:var(--s4);padding:var(--s5) 0;border-top:1px solid var(--line);align-items:start}
+  .plane:last-child{border-bottom:1px solid var(--line)}
+  .plane-num{font-family:var(--mono);font-size:13px;color:var(--dim);padding-top:6px}
+  .plane h3{font-family:var(--display);font-size:24px;font-weight:600;letter-spacing:-.01em;margin-bottom:10px}
+  .plane p{color:var(--muted);font-size:15.5px;max-width:46ch}
+  .plane-visual{display:flex;flex-direction:column;gap:10px;justify-content:center;padding-top:6px}
+  .topic{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:var(--raised);border:1px solid var(--line);border-radius:8px;padding:10px 14px;overflow-x:auto}
+  .topic b{color:var(--accent);font-weight:500}
+  .topic small{color:var(--dim);font-size:11px}
+
+  .term{background:var(--raised);border:1px solid var(--line-strong);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+  .term-body{padding:20px 22px;font-family:var(--mono);font-size:13.5px;line-height:2;color:var(--muted)}
+  .term-body .p{color:var(--accent)}
+  .term-body .ok{color:#4cc38a}
+  .term-body .c{color:var(--ink)}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:var(--s5);align-items:center}
+  .swap-table{width:100%;border-collapse:collapse;font-size:14px}
+  .swap-table th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:400;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line-strong)}
+  .swap-table td{padding:12px 14px;border-bottom:1px solid var(--line);color:var(--muted)}
+  .swap-table td:first-child{color:var(--ink)}
+  .swap-table tr:last-child td{border-bottom:0}
+
+  .road{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s2);margin-top:var(--s5)}
+  .road-item{border:1px solid var(--line);border-radius:var(--r);padding:var(--s3);background:var(--raised)}
+  .road-item.done{border-color:rgba(240,166,60,.35)}
+  .road-item .mono{font-size:11px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase}
+  .road-item.done .mono{color:var(--accent)}
+  .road-item p{font-size:14.5px;margin-top:8px;color:var(--muted)}
+  .road-item p b{color:var(--ink);font-weight:500;display:block;margin-bottom:2px}
+
+  .closing{text-align:center;border-top:1px solid var(--line)}
+  .closing .cmd{font-family:var(--mono);font-size:15px;color:var(--muted);background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:14px 22px;display:inline-block;margin:var(--s4) 0}
+  .closing .cmd b{color:var(--accent);font-weight:500}
+  footer{border-top:1px solid var(--line);padding:var(--s4) 0;font-size:13px;color:var(--dim)}
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);flex-wrap:wrap}
+  .foot a{color:var(--muted)} .foot a:hover{color:var(--ink)}
+
+  @media(max-width:880px){
+    section{padding:var(--s6) 0}
+    .hero{padding:var(--s6) 0}
+    .hero-grid,.split{grid-template-columns:1fr;gap:var(--s5)}
+    .plane{grid-template-columns:1fr;gap:var(--s2);padding:var(--s4) 0}
+    .road{grid-template-columns:1fr 1fr}
+    .navlinks a:not(.btn){display:none}
+  }
+  @media(max-width:560px){.road{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap navbar">
+    <a class="wordmark" href="#">home<span>os</span></a>
+    <div class="navlinks">
+      <a href="#architecture">Architecture</a>
+      <a href="#run">Run it</a>
+      <a href="#roadmap">Roadmap</a>
+      <a class="btn ghost" href="https://github.com/aredwan-xyz/homeos">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-glow"></div>
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Open source · smart home platform</p>
+      <h1>One brain for the whole home.</h1>
+      <p class="lead">HomeOS unifies every sensor, light, and thermostat behind a single digital twin — an AI agent, live dashboard, and automation engine on one honest MQTT pipeline.</p>
+      <div class="hero-ctas">
+        <a class="btn" href="https://github.com/aredwan-xyz/homeos">View on GitHub
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+        </a>
+        <a class="btn ghost mono" href="#run">npm run dev</a>
+      </div>
+      <div class="hero-meta">
+        <span class="chip">node ≥ <b>22</b></span>
+        <span class="chip"><b>0</b> containers</span>
+        <span class="chip"><b>0</b> hardware needed</span>
+        <span class="chip">MIT</span>
+      </div>
+    </div>
+
+    <div class="frame reveal">
+      <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">localhost:4700</span></div>
+      <div class="app">
+        <div class="app-head">
+          <span class="app-brand">home<span style="color:var(--accent)">os</span> <span style="color:var(--dim);font-family:var(--mono);font-size:10px;font-weight:400">· floor 1</span></span>
+          <span class="live"><i></i>live</span>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><label>Power</label><b>412</b> <span>W</span></div>
+          <div class="kpi"><label>Indoor avg</label><b>21.9</b> <span>°C</span></div>
+          <div class="kpi"><label>Occupancy</label><b>4</b> <span>ppl</span></div>
+          <div class="kpi"><label>CO₂ avg</label><b>486</b> <span>ppm</span></div>
+        </div>
+        <div class="app-grid">
+          <div class="pane">
+            <h4>Floor plan</h4>
+            <svg viewBox="0 0 300 210" width="100%" aria-label="Live floor plan">
+              <rect class="room" x="2" y="2" width="140" height="100" rx="6"/>
+              <text class="rn" x="12" y="20">Living room</text><text class="rt" x="12" y="38">22.4°</text>
+              <circle cx="130" cy="16" r="3" fill="var(--accent)"/>
+              <circle cx="100" cy="80" r="3.5" fill="var(--muted)"/><circle cx="114" cy="80" r="3.5" fill="var(--muted)"/>
+              <rect class="room" x="150" y="2" width="148" height="62" rx="6"/>
+              <text class="rn" x="160" y="20">Kitchen</text><text class="rt" x="160" y="38">23.1°</text>
+              <circle cx="284" cy="70" r="3.5" fill="var(--muted)" transform="translate(0,-14)"/>
+              <rect class="room sel" x="150" y="72" width="148" height="136" rx="6"/>
+              <text class="rn" x="160" y="90">Studio</text><text class="rt" x="160" y="108">21.2°</text>
+              <circle cx="286" cy="86" r="3" fill="var(--accent)"/>
+              <circle cx="222" cy="188" r="3.5" fill="var(--muted)"/>
+              <rect class="room" x="2" y="110" width="84" height="98" rx="6"/>
+              <text class="rn" x="12" y="128">Bedroom</text><text class="rt" x="12" y="146">20.6°</text>
+              <rect class="room" x="94" y="110" width="48" height="98" rx="6"/>
+              <text class="rn" x="102" y="128">Bath</text><text class="rt" x="102" y="146" style="font-size:10px">22.0°</text>
+            </svg>
+          </div>
+          <div class="pane">
+            <h4>Studio</h4>
+            <div class="ctl"><span>Setpoint</span><span class="track"><i></i><em></em></span><b>21°</b></div>
+            <div class="ctl"><span>Lights</span><span class="toggle"><i></i></span><b>85%</b></div>
+            <div class="ctl"><span>Scene</span><b style="color:var(--accent)">Focus</b></div>
+            <h4 style="margin-top:12px">Power · 15 min</h4>
+            <svg class="sparkline" viewBox="0 0 200 36" width="100%" preserveAspectRatio="none" aria-label="Power sparkline">
+              <polyline points="0,26 14,24 28,27 42,20 56,22 70,14 84,17 98,10 112,14 126,8 140,12 154,7 168,11 182,6 200,9" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="architecture">
+  <div class="wrap">
+    <p class="eyebrow reveal">Architecture</p>
+    <h2 class="reveal" style="margin:14px 0 18px">Three planes. Strictly separated.</h2>
+    <p class="lead reveal" style="margin-bottom:var(--s5)">The dashboard never talks to devices — it renders a digital twin. Telemetry flows up, live state sits in the middle, commands flow down. Conflating them is how smart homes become spaghetti; HomeOS never does.</p>
+
+    <div class="planes">
+      <div class="plane reveal">
+        <span class="plane-num">01</span>
+        <div>
+          <h3>Telemetry up</h3>
+          <p>Devices publish readings over real MQTT. Retained messages mean the dashboard loads instantly with last-known state; Last Will gives offline detection for free. Ingest validates, enriches, and writes history.</p>
+        </div>
+        <div class="plane-visual">
+          <div class="topic"><b>homeos/tele</b>/studio/climate/temp <small>→ 21.2</small></div>
+          <div class="topic"><b>homeos/state</b>/studio/lights <small>· retained</small></div>
+        </div>
+      </div>
+      <div class="plane reveal">
+        <span class="plane-num">02</span>
+        <div>
+          <h3>Live state</h3>
+          <p>The twin store is the single source of current truth. The realtime API pushes deltas over WebSocket — a snapshot on connect, then only what changed, coalesced per animation frame.</p>
+        </div>
+        <div class="plane-visual">
+          <div class="topic">GET <b>/ws</b> <small>→ snapshot, then deltas</small></div>
+          <div class="topic">{"room":"studio","temp":<b>21.4</b>}</div>
+        </div>
+      </div>
+      <div class="plane reveal">
+        <span class="plane-num">03</span>
+        <div>
+          <h3>Commands down</h3>
+          <p>Controls publish intent, never state. The actuator's state echo is the only confirmation — optimistic UI with an ack timeout, so the interface degrades honestly when a device is unreachable.</p>
+        </div>
+        <div class="plane-visual">
+          <div class="topic"><b>homeos/cmd</b>/studio/lights <small>{"on":true,"level":80}</small></div>
+          <div class="topic"><small>state echo confirms in ~200 ms</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="run" style="background:var(--raised);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap split">
+    <div>
+      <p class="eyebrow reveal">Run it</p>
+      <h2 class="reveal" style="margin:14px 0 18px">The whole platform.<br>One command.</h2>
+      <p class="lead reveal">An embedded MQTT broker, ingest pipeline, digital twin, time-series history, WebSocket API, live dashboard, and a simulated five-room sensor fleet — one process group, zero containers. Real hardware connects to the same broker when you're ready.</p>
+      <table class="swap-table reveal" style="margin-top:var(--s4)">
+        <tr><th>Concern</th><th>Dev · now</th><th>Production</th></tr>
+        <tr><td>Broker</td><td>Aedes, embedded</td><td>Mosquitto</td></tr>
+        <tr><td>Twin</td><td>in-memory</td><td>Redis</td></tr>
+        <tr><td>History</td><td>SQLite</td><td>TimescaleDB</td></tr>
+        <tr><td>Devices</td><td>simulated fleet</td><td>Zigbee2MQTT · Matter</td></tr>
+      </table>
+    </div>
+    <div class="term reveal">
+      <div class="frame-bar"><i></i><i></i><i></i><span class="frame-url">zsh — homeos</span></div>
+      <div class="term-body">
+        <div><span class="p">$</span> <span class="c">git clone aredwan-xyz/homeos && cd homeos</span></div>
+        <div><span class="p">$</span> <span class="c">npm install && npm run dev</span></div>
+        <div>[core] embedded MQTT broker on <span class="c">:1883</span></div>
+        <div>[core] http + ws on <span class="c">:4700</span></div>
+        <div>[core] ingest connected to broker</div>
+        <div>[sim]&nbsp; simulator: mqtt connected</div>
+        <div><span class="ok">✓</span> twin live — 5 rooms reporting</div>
+        <div><span class="p">$</span> <span class="c">open http://localhost:4700</span> <span style="opacity:.5">▌</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <p class="eyebrow reveal">Roadmap</p>
+    <h2 class="reveal" style="margin:14px 0">From simulated flat to real building.</h2>
+    <div class="road">
+      <div class="road-item done reveal"><span class="mono">Shipped</span><p><b>Three-plane core</b>Broker, ingest, twin, history, WebSocket API — CI-verified end to end.</p></div>
+      <div class="road-item done reveal"><span class="mono">Shipped</span><p><b>Live dashboard</b>Floor plan, room control, scenes, power sparkline over live deltas.</p></div>
+      <div class="road-item reveal"><span class="mono">Next</span><p><b>Automation engine</b>Edge-first rules with safety interlocks — scenes run with the internet down.</p></div>
+      <div class="road-item reveal"><span class="mono">Then</span><p><b>Agent layer</b>Claude over the twin: ask why the studio is warm, approve actions, learn patterns.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="closing">
+  <div class="wrap">
+    <p class="eyebrow reveal">Get started</p>
+    <h2 class="reveal" style="margin-top:14px">Your home, running on your code.</h2>
+    <div class="reveal"><code class="cmd"><b>$</b> npm install && npm run dev</code></div>
+    <div class="reveal"><a class="btn" href="https://github.com/aredwan-xyz/homeos">Explore the repo
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+    </a></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <span class="wordmark" style="font-size:15px">home<span>os</span></span>
+    <span>MIT · built by <a href="https://github.com/aredwan-xyz">Abid Redwan</a></span>
+    <a href="https://github.com/aredwan-xyz/homeos">github.com/aredwan-xyz/homeos</a>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver(
+    (es) => es.forEach((e) => e.isIntersecting && e.target.classList.add('in')),
+    { threshold: 0.12 }
+  );
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+</script>
+</body>
+</html>
