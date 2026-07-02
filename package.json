@@ -1,0 +1,25 @@
+{
+  "name": "homeos",
+  "version": "0.1.0",
+  "description": "All-in-one smart home platform — AI agent, dashboard, and automation engine over an MQTT digital-twin pipeline",
+  "private": true,
+  "license": "MIT",
+  "author": "Abid Redwan",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aredwan-xyz/homeos.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "type": "module",
+  "workspaces": [
+    "services/core",
+    "services/simulator"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "core": "node services/core/src/index.js",
+    "simulator": "node services/simulator/src/index.js"
+  }
+}

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HomeOS — home console</title>
+<style>
+  :root {
+    --bg: #0d0f12; --card: #14171c; --card-2: #1a1e24; --line: #262b33;
+    --text: #e8eaed; --muted: #8b929c; --dim: #5c636d;
+    --accent: #f0a63c; --accent-dim: #6b4a1a; --ok: #4cc38a; --cool: #5aa9f0;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 15px/1.6 -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh; padding: 32px clamp(16px, 4vw, 48px);
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand h1 { font-size: 20px; font-weight: 600; letter-spacing: .3px; }
+  .brand span { font-size: 12px; color: var(--dim); }
+  .conn { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted);
+    background: var(--card); border: 1px solid var(--line); padding: 6px 14px; border-radius: 20px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+  .dot.live { background: var(--ok); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .4; } }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
+  .kpi label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+  .kpi .v { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .kpi .u { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 3px; }
+  .main { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: 14px; align-items: stretch; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); font-weight: 600; margin-bottom: 12px; }
+  svg text { font-family: inherit; }
+  .room-shape { fill: var(--card-2); stroke: var(--line); stroke-width: 1; cursor: pointer; transition: fill .2s, stroke .2s; }
+  .room-shape:hover { stroke: var(--muted); }
+  .room-shape.sel { fill: #232b1d0d; stroke: var(--accent); }
+  .rname { font-size: 12px; fill: var(--muted); pointer-events: none; }
+  .rtemp { font-size: 19px; font-weight: 600; fill: var(--text); pointer-events: none; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0; }
+  .row label { font-size: 13px; color: var(--muted); }
+  input[type=range] { flex: 1; accent-color: var(--accent); }
+  button {
+    background: var(--card-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 14px; font-size: 13px; cursor: pointer; transition: border-color .15s;
+  }
+  button:hover { border-color: var(--muted); }
+  button.on { border-color: var(--accent); color: var(--accent); }
+  .scenes { display: flex; gap: 8px; }
+  .scenes button { flex: 1; }
+  .spark-panel { margin-top: 14px; }
+  .spark-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); margin-bottom: 6px; }
+  #d-name { font-size: 16px; font-weight: 600; }
+  #d-sub { font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+  .pending { opacity: .5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>homeos</h1><span>home console · floor 1</span></div>
+    <div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-label">connecting…</span></div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><label>Power</label><div class="v"><span id="k-power">—</span><span class="u">W</span></div></div>
+    <div class="kpi"><label>Indoor avg</label><div class="v"><span id="k-temp">—</span><span class="u">°C</span></div></div>
+    <div class="kpi"><label>Occupancy</label><div class="v"><span id="k-occ">—</span><span class="u">people</span></div></div>
+    <div class="kpi"><label>CO₂ avg</label><div class="v"><span id="k-co2">—</span><span class="u">ppm</span></div></div>
+  </div>
+
+  <div class="main">
+    <div class="panel">
+      <h2>Floor plan</h2>
+      <svg viewBox="0 0 380 300" width="100%" aria-label="Floor plan">
+        <g data-room="living"><rect class="room-shape" x="4" y="4" width="182" height="142" rx="8"/><text class="rname" x="18" y="28">Living room</text><text class="rtemp" x="18" y="54" data-t="living">—</text><circle data-l="living" cx="170" cy="22" r="4" fill="var(--line)"/><text class="rname" x="18" y="134" data-o="living"></text></g>
+        <g data-room="kitchen"><rect class="room-shape" x="194" y="4" width="182" height="88" rx="8"/><text class="rname" x="208" y="28">Kitchen</text><text class="rtemp" x="208" y="54" data-t="kitchen">—</text><circle data-l="kitchen" cx="360" cy="22" r="4" fill="var(--line)"/><text class="rname" x="208" y="80" data-o="kitchen"></text></g>
+        <g data-room="studio"><rect class="room-shape" x="194" y="100" width="182" height="196" rx="8"/><text class="rname" x="208" y="124">Studio</text><text class="rtemp" x="208" y="150" data-t="studio">—</text><circle data-l="studio" cx="360" cy="118" r="4" fill="var(--line)"/><text class="rname" x="208" y="284" data-o="studio"></text></g>
+        <g data-room="bedroom"><rect class="room-shape" x="4" y="154" width="118" height="142" rx="8"/><text class="rname" x="18" y="178">Bedroom</text><text class="rtemp" x="18" y="204" data-t="bedroom">—</text><circle data-l="bedroom" cx="106" cy="172" r="4" fill="var(--line)"/><text class="rname" x="18" y="284" data-o="bedroom"></text></g>
+        <g data-room="bath"><rect class="room-shape" x="130" y="154" width="56" height="142" rx="8"/><text class="rname" x="140" y="178">Bath</text><text class="rtemp" x="140" y="202" data-t="bath" style="font-size:14px">—</text><circle data-l="bath" cx="172" cy="172" r="4" fill="var(--line)"/><text class="rname" x="140" y="284" data-o="bath"></text></g>
+      </svg>
+    </div>
+
+    <div class="panel">
+      <div id="d-name">—</div>
+      <div id="d-sub">now — °C · target — °C</div>
+      <div class="row">
+        <label>Setpoint</label>
+        <input type="range" id="d-set" min="16" max="28" step="1" value="21">
+        <span id="d-setv" style="min-width:38px; text-align:right; font-variant-numeric:tabular-nums;">—</span>
+      </div>
+      <div class="row"><button id="d-lights" style="width:100%">Lights —</button></div>
+      <h2 style="margin-top:18px">Scenes · whole home</h2>
+      <div class="scenes">
+        <button data-scene="focus">Focus</button>
+        <button data-scene="relax">Relax</button>
+        <button data-scene="away">Away</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel spark-panel">
+    <div class="spark-head"><span>Whole-home power · last 15 min</span><span id="s-range">—</span></div>
+    <svg id="spark" viewBox="0 0 900 70" width="100%" height="70" preserveAspectRatio="none">
+      <polyline id="s-line" points="" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</div>
+
+<script>
+const ROOMS = ['living', 'kitchen', 'studio', 'bedroom', 'bath'];
+const NAMES = { living: 'Living room', kitchen: 'Kitchen', studio: 'Studio', bedroom: 'Bedroom', bath: 'Bath' };
+const twin = {};
+let selected = 'studio';
+let power = null;
+let powerHist = [];
+let dirty = false;
+
+const $ = (id) => document.getElementById(id);
+const q = (sel) => document.querySelector(sel);
+
+function room(name) {
+  if (!twin[name]) twin[name] = {};
+  return twin[name];
+}
+
+async function cmd(roomName, device, action) {
+  await fetch('/api/cmd', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ room: roomName, device, action })
+  });
+}
+
+function render() {
+  dirty = false;
+  let tSum = 0, tN = 0, cSum = 0, cN = 0, occ = 0;
+  for (const name of ROOMS) {
+    const r = room(name);
+    if (typeof r.temp === 'number') { tSum += r.temp; tN++; q(`[data-t="${name}"]`).textContent = r.temp.toFixed(1) + '°'; }
+    if (typeof r.co2 === 'number') { cSum += r.co2; cN++; }
+    const people = r.presence?.occupants ?? 0;
+    occ += people;
+    q(`[data-o="${name}"]`).textContent = people ? '●'.repeat(people) : '';
+    q(`[data-l="${name}"]`).setAttribute('fill', r.lights?.on ? 'var(--accent)' : 'var(--line)');
+    q(`[data-room="${name}"] .room-shape`).classList.toggle('sel', name === selected);
+  }
+  if (power !== null) $('k-power').textContent = Math.round(power);
+  if (tN) $('k-temp').textContent = (tSum / tN).toFixed(1);
+  $('k-occ').textContent = occ;
+  if (cN) $('k-co2').textContent = Math.round(cSum / cN);
+
+  const r = room(selected);
+  $('d-name').textContent = NAMES[selected];
+  $('d-sub').textContent = `now ${typeof r.temp === 'number' ? r.temp.toFixed(1) : '—'} °C · target ${r.climate?.setpoint ?? '—'} °C`;
+  if (r.climate && document.activeElement !== $('d-set')) $('d-set').value = r.climate.setpoint;
+  $('d-setv').textContent = (r.climate?.setpoint ?? '—') + '°';
+  const lightsBtn = $('d-lights');
+  lightsBtn.textContent = r.lights?.on ? `Lights on · ${r.lights.level}%` : 'Lights off';
+  lightsBtn.classList.toggle('on', Boolean(r.lights?.on));
+  lightsBtn.classList.remove('pending');
+  renderSpark();
+}
+
+function renderSpark() {
+  if (powerHist.length < 2) return;
+  const vals = powerHist.map((p) => p.v);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = Math.max(max - min, 20);
+  const pts = powerHist.map((p, i) =>
+    `${(i * (900 / (powerHist.length - 1))).toFixed(1)},${(64 - ((p.v - min) / span) * 56).toFixed(1)}`
+  ).join(' ');
+  $('s-line').setAttribute('points', pts);
+  $('s-range').textContent = `${Math.round(min)}–${Math.round(max)} W`;
+}
+
+function scheduleRender() {
+  if (dirty) return;
+  dirty = true;
+  requestAnimationFrame(render);
+}
+
+function connect() {
+  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
+  ws.onopen = () => { $('conn-dot').classList.add('live'); $('conn-label').textContent = 'live'; };
+  ws.onclose = () => {
+    $('conn-dot').classList.remove('live');
+    $('conn-label').textContent = 'reconnecting…';
+    setTimeout(connect, 2000);
+  };
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'snapshot') {
+      for (const [name, fields] of Object.entries(msg.twin)) Object.assign(room(name), fields);
+      if (typeof msg.twin.home?.power === 'number') power = msg.twin.home.power;
+    } else if (msg.type === 'tele') {
+      if (msg.room === 'home' && msg.measurement === 'power') {
+        power = msg.value;
+        powerHist.push({ t: msg.ts, v: msg.value });
+        if (powerHist.length > 450) powerHist.shift();
+      } else {
+        room(msg.room)[msg.measurement] = msg.value;
+      }
+    } else if (msg.type === 'state') {
+      room(msg.room)[msg.device] = msg.state;
+    }
+    scheduleRender();
+  };
+}
+
+document.querySelectorAll('[data-room]').forEach((g) => {
+  g.addEventListener('click', () => { selected = g.dataset.room; scheduleRender(); });
+});
+$('d-set').addEventListener('change', (e) => {
+  cmd(selected, 'climate', { type: 'setpoint', value: Number(e.target.value) });
+});
+$('d-set').addEventListener('input', (e) => { $('d-setv').textContent = e.target.value + '°'; });
+$('d-lights').addEventListener('click', () => {
+  const on = !room(selected).lights?.on;
+  $('d-lights').classList.add('pending');
+  cmd(selected, 'lights', { type: 'lights', on, level: 75 });
+});
+document.querySelectorAll('[data-scene]').forEach((b) => {
+  b.addEventListener('click', () => cmd('all', 'all', { type: 'scene', name: b.dataset.scene }));
+});
+
+fetch('/api/history?room=home&measurement=power&minutes=15')
+  .then((r) => r.json())
+  .then((rows) => {
+    powerHist = rows.map((r) => ({ t: new Date(r.time).getTime(), v: r.value }));
+    scheduleRender();
+  })
+  .catch(() => {});
+connect();
+</script>
+</body>
+</html>
