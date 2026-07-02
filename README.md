@@ -5,9 +5,12 @@ management dashboard, and automation engine on top of a protocol-agnostic
 hardware abstraction layer.
 
 ![ci](https://github.com/aredwan-xyz/homeos/actions/workflows/ci.yml/badge.svg)
+![pages](https://github.com/aredwan-xyz/homeos/actions/workflows/pages.yml/badge.svg)
 ![node](https://img.shields.io/badge/node-%E2%89%A522-brightgreen)
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![status](https://img.shields.io/badge/status-early%20build-orange)
+
+**[Landing page →](https://aredwan-xyz.github.io/homeos/)**
 
 ```bash
 npm install && npm run dev    # zero containers, zero hardware needed
@@ -90,6 +93,7 @@ adapters is on the roadmap.
 services/core/       broker + ingest + twin + history + HTTP/WS API
 services/simulator/  simulated sensor fleet with real command handling
 dashboard/           live floor-plan UI (vanilla, zero build step)
+site/                marketing landing page, deployed to GitHub Pages
 scripts/dev.mjs      one-command dev runner
 deploy/              docker-compose production target (Mosquitto/Timescale/Redis)
 ```
